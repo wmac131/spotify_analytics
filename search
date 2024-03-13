@@ -1,0 +1,259 @@
+# Create our spotifyObject with permissions
+spotifyObject = spotipy.Spotify(auth=token)
+
+# Get Current Device
+devices = spotifyObject.devices()
+deviceID = devices['devices'][0]['id']
+
+# User Information
+user = spotifyObject.current_user()
+displayName = user['display_name']
+followers = user['followers']['total']
+
+while True:
+
+    print()
+    print(">>> Welcome to Spotipy " + displayName + "!")
+    print(">>> You have " + str(followers) + " followers.")
+    print()
+    print("0 - exit")
+    print("1 - Search for an artist")
+    print("2 - Search for an album")
+    print("3 - Search for a track")
+    print("4 - Search for a playlist")
+    print()
+    choice = input("Your choice: ")
+
+    # Search for the Artist
+    if choice == '1':
+        print()
+        searchQuery = input("Ok, what's their name?: ")
+        print()
+
+        # Get search results
+        searchResults = spotifyObject.search(searchQuery,1,0,"artist")
+
+        # Artist Details
+        artist = searchResults['artists']['items'][0]
+        print(artist['name'])
+        print(str(artist['followers']['total']) + " followers")
+        print(artist['genres'][0])
+        print()
+        webbrowser.open(artist['images'][0]['url'])
+        artistID = artist['id']
+        print()
+        print("So, what would you like to do next?")
+        print()
+        print("0 - exit")
+        print("1 - extract JSON data")
+        print("2 - View Album Data")
+        artistChoice = input("Your choice: ")
+
+        # Exit
+        if artistChoice == "0":
+            break
+
+        # Extract Artist JSON
+        if artistChoice == "1":
+            print(json.dumps(artist, sort_keys=True, indent=4)) 
+
+        # View Album Data
+        if artistChoice == "2":
+
+            # Album and track details
+            trackURIs = []
+            trackArt = []
+            z = 1
+
+            # Extract Album Data
+            albumResults = spotifyObject.artist_albums(artistID)
+            albumResults = albumResults['items']
+
+            for item in albumResults:
+                print("ALBUM " + item['name'])
+                albumId = item['id']
+                albumArt = item['images'][0]['url']
+
+                # Extract Track Data
+                trackResults = spotifyObject.album_tracks(albumId)
+                trackResults = trackResults['items']
+
+                for item in trackResults:
+                    print(str(z) + ": " + item['name'])
+                    trackURIs.append(item['uri'])
+                    trackArt.append(albumArt)
+                    z+=1
+                print()
+
+            # See Album Art
+            while True:
+                songSelection = input ("Enter a song number to see the album art associated with it (x to exit)")
+                if songSelection == "x":
+                    break
+                webbrowser.open(trackArt[int(songSelection)])
+            
+    # Search for the Album
+    if choice == '2':
+        print()
+        searchQuery = input("Ok, what's the name?: ")
+        print()
+
+        # Get search results
+        searchResults = spotifyObject.search(searchQuery,1,0,"album")
+
+        # Album Details
+        album = searchResults['albums']['items'][0]
+        print()
+        print(album['name'])
+        print("Artist: " + album['artists'][0]['name'])
+        print("Total Tracks: " + str(album['total_tracks']))
+        print("Release Date: " + album['release_date'])
+        print()
+        webbrowser.open(album['images'][0]['url'])
+        albumID = album['id']
+        albumArt = album['images'][0]['url']
+        z = 1
+        print()
+        print("So, what would you like to do next?")
+        print()
+        print("0 - exit")
+        print("1 - extract JSON data")
+        print("2 - View Album Data")
+        albumChoice = input("Your choice: ")
+
+        # Exit
+        if albumChoice == "0":
+            break
+
+        # Extract Album JSON
+        if albumChoice == "1":
+            print(json.dumps(album, sort_keys=True, indent=4)) 
+
+        # View Album Data
+        if albumChoice == "2":
+
+            # Extract Track Data
+            trackResults = spotifyObject.album_tracks(albumID, limit = 1)
+            trackResults = trackResults['items']
+            trackIDs = []
+            for item in trackResults:
+                trackIDs.append(item['id'])
+
+            print()
+            print(album['name'])
+            print("Artist: " + album['artists'][0]['name'])
+            print("Total Tracks: " + str(album['total_tracks']))
+            print("Release Date: " + album['release_date'])
+            print()
+            print()
+
+            # Extract Track Names
+            for item in trackResults:
+                    print(str(z) + ": " + item['name'])
+                    z+=1
+            print()
+
+    # Search for the Track
+    if choice == '3':
+        print()
+        searchQuery = input("Ok, what's the name?: ")
+        print()
+
+        # Get search results
+        searchResults = spotifyObject.search(searchQuery,1,0,"track")
+
+        # Track Details
+        track = searchResults['tracks']['items'][0]
+        print()
+        print(track['name'])
+        print("Artist: " + track['artists'][0]['name'])
+        print("Duration (m): " + str(round(track['duration_ms']/60000,2)))
+        print("Release Date: " + track['album']['release_date'])
+        print("Explicit: " + str(track['explicit']))
+        print()
+        trackID = track['id']
+        z = 0
+        print()
+        print("So, what would you like to do next?")
+        print()
+        print("0 - exit")
+        print("1 - extract JSON data")
+        print("2 - Add to Queue")
+        trackChoice = input("Your choice: ")
+
+        # Exit
+        if trackChoice == "0":
+            break
+
+        # Extract Track JSON
+        if trackChoice == "1":
+            print(json.dumps(track, sort_keys=True, indent=4))
+
+        # Add to Queue
+        if trackChoice == "2":
+            spotifyObject.add_to_queue(trackID) 
+
+    # Search for the Playlist
+    if choice == '4':
+        print()
+        searchQuery = input("Ok, what's the name?: ")
+        print()
+
+        # Get search results
+        searchResults = spotifyObject.search(searchQuery,1,0,"playlist")
+
+        # Playlist Details
+        playlist = searchResults['playlists']['items'][0]
+        print()
+        print(playlist['name'])
+        print("Tracks: " + str(playlist['tracks']['total']))
+        print()
+        playlistID = playlist['id']
+        z = 1
+        print()
+        print("So, what would you like to do next?")
+        print()
+        print("0 - exit")
+        print("1 - extract JSON data")
+        print("2 - View Playlist Data")
+        playlistChoice = input("Your choice: ")
+
+        # Exit
+        if playlistChoice == "0":
+            break
+
+        # Extract Playlist JSON
+        if playlistChoice == "1":
+            print(json.dumps(playlist, sort_keys=True, indent=4)) 
+
+        # View Playlist Data
+        if playlistChoice == "2":
+
+            trackResults = spotifyObject.playlist_tracks(playlistID)
+            trackResults = trackResults['items']
+            trackIDs = []
+
+            # Playlist Data Choice
+            playlistDataChoice = input("Normal or JSON?")
+
+            # Extract JSON
+            if playlistDataChoice == "JSON":
+                print(json.dumps(trackResults, sort_keys=True, indent=4))
+
+            # Extract Track Data
+            if playlistDataChoice == "Normal":
+                for item in trackResults:
+                    trackIDs.append(item['track']['id'])  
+            
+                print()
+                print(playlist['name'])
+                print("Tracks: " + str(playlist['tracks']['total']))
+                print()
+
+                for item in trackResults:
+                    print(str(z) + ": " + item['track']['name'] + ", " + item['track']['artists'][0]['name'])
+                    z+=1
+
+# End the Program
+    if choice == "0":
+        break
